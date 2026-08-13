@@ -1,0 +1,17 @@
+{
+  "name": "veel-tips-bot",
+  "version": "1.0.0",
+  "description": "Discord bot that generates UGC creator tips using Gemini API — on-demand via /tip and a weekly scheduled post.",
+  "main": "index.js",
+  "type": "commonjs",
+  "scripts": {
+    "deploy-commands": "node deploy-commands.js",
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@google/generative-ai": "^0.21.0",
+    "discord.js": "^14.16.3",
+    "dotenv": "^16.4.5",
+    "node-cron": "^3.0.3"
+  }
+}
