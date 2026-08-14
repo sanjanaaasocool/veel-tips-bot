@@ -24,12 +24,28 @@ function pickAngle() {
   return TIP_ANGLES[Math.floor(Math.random() * TIP_ANGLES.length)];
 }
 
-const MODEL = 'gemini-3.5-flash';
+const MODELS = ['gemini-3.5-flash', 'gemini-3.6-flash', 'gemini-flash-latest'];
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
+async function runWithFallback(prompt) {
+  let lastError;
+  for (const modelName of MODELS) {
+    try {
+      const model = genAI.getGenerativeModel({ model: modelName });
+      const result = await model.generateContent(prompt);
+      return result.response.text().trim();
+    } catch (err) {
+      lastError = err;
+      console.error(`Model ${modelName} failed, trying next...`, err.status || err.message);
+      await sleep(1500);
+    }
+  }
+  throw lastError;
+}
 
 async function generateTip() {
   const angle = pickAngle();
-
-  const model = genAI.getGenerativeModel({ model: MODEL });
 
   const prompt = `You are a UGC expert and creator coach for the "Veel Creators Community." These creators make content for brands on TikTok, Instagram Reels, and YouTube Shorts.
 
@@ -50,13 +66,10 @@ TONE:
 - Casual and encouraging, like a fellow creator sharing what works.
 - Concrete and actionable. Give a specific technique they can use TODAY.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  return runWithFallback(prompt);
 }
 
 async function askCreator(query) {
-  const model = genAI.getGenerativeModel({ model: MODEL });
-
   const prompt = `You are a UGC creator expert and coach for the "Veel Creators Community." These creators make content for brands on TikTok, Instagram Reels, and YouTube Shorts. Many are beginners trying to land brand deals and grow.
 
 A creator just asked: "${query}"
@@ -91,8 +104,7 @@ TONE:
 - Casual and encouraging, like a creator friend who's been through it.
 - Do NOT be generic. Every answer must have something specific and usable.`;
 
-  const result = await model.generateContent(prompt);
-  return result.response.text().trim();
+  return runWithFallback(prompt);
 }
 
 module.exports = { generateTip, askCreator };
