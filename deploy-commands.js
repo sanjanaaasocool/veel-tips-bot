@@ -13,7 +13,20 @@ const commands = [
         .setName('query')
         .setDescription('Your question about content creation, UGC, filming, editing, brands, etc.')
         .setRequired(true)
+    )
+    .addStringOption((option) =>
+      option
+        .setName('role')
+        .setDescription('Are you a creator or a brand?')
+        .addChoices(
+          { name: 'Creator', value: 'creator' },
+          { name: 'Brand', value: 'brand' }
+        )
+        .setRequired(true)
     ),
+  new SlashCommandBuilder()
+    .setName('trivia')
+    .setDescription('Answer a UGC creator trivia question (30 seconds)'),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
@@ -29,7 +42,7 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
       { body: commands }
     );
 
-    console.log('Successfully registered /tip and /ask commands.');
+    console.log('Successfully registered /tip, /ask, and /trivia commands.');
   } catch (error) {
     console.error('Failed to register command:', error);
   }
