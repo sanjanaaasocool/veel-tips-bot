@@ -8,7 +8,7 @@ const client = new Client({
   intents: [GatewayIntentBits.Guilds],
 });
 
-const TRIVIA_TIMEOUT_MS = 60 * 1000;
+const TRIVIA_TIMEOUT_MS = 45 * 1000;
 const activeTrivia = new Map(); // triviaId -> { question, correctLetter, channelId, answeredUsers }
 
 const COOLDOWN_MS = 60 * 1000;
@@ -68,16 +68,7 @@ function buildAskEmbed(query, answer) {
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-  cron.schedule('0 10 * * 1', async () => {
-    try {
-      const channel = await client.channels.fetch(process.env.TIPS_CHANNEL_ID);
-      const tipText = await generateTip();
-      await channel.send({ embeds: [buildTipEmbed(tipText)] });
-      console.log('Posted weekly Monday tip.');
-    } catch (err) {
-      console.error('Failed to post weekly tip:', err);
-    }
-  });
+
 });
 
 client.on('interactionCreate', async (interaction) => {
