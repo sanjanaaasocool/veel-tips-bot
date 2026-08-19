@@ -148,11 +148,10 @@ async function handleCommand(interaction) {
     }
 
     const query = interaction.options.getString('query');
-    const role = interaction.options.getString('role');
     await interaction.deferReply();
 
     try {
-      const answer = await askCreator(query, role);
+      const answer = await askCreator(query);
       lastUsed.set(interaction.user.id, now);
       await interaction.editReply({ embeds: [buildAskEmbed(query, answer)] });
     } catch (err) {
