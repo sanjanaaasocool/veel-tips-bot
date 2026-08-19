@@ -69,24 +69,25 @@ TONE:
   return runWithFallback(prompt);
 }
 
-async function askCreator(query, role) {
-  const prompt = `CRITICAL: You MUST answer strictly from the perspective of the role defined below. Do NOT mix perspectives. Do NOT give creator advice to a brand or brand advice to a creator.
-
-ROLE: ${role.toUpperCase()}
-
-${role === 'brand'
-    ? `You are answering for a BRAND (a company/business looking to hire UGC creators). The brand wants to find, hire, and work with creators. Your advice must be from the BRAND's perspective: how to find creators, how to vet them, what to pay, how to write briefs, how to manage campaigns, which platforms to use for sourcing creators. Do NOT tell them how to create content or be a creator.`
-    : `You are answering for a CREATOR (a person who makes UGC content for brands on TikTok, Instagram Reels, and YouTube Shorts). The creator wants to land deals, create content, pitch brands, and grow. Your advice must be from the CREATOR's perspective: how to film, how to pitch, how to price work, how to build a portfolio, how to land brand deals. Do NOT tell them how to hire or manage creators.`}
+async function askCreator(query) {
+  const prompt = `You are a UGC expert for the "Veel Creators Community." Answer the following question.
 
 A user asked: "${query}"
+
+HOW TO DECIDE WHO THE ANSWER IS FOR:
+- If the question is clearly about creating content, filming, pitching brands, pricing your work, or growing as a creator, answer as "If you are a creator..." and give advice from the creator's perspective.
+- If the question is clearly about hiring creators, writing briefs, managing campaigns, vetting creators, or sourcing UGC, answer as "If you are a brand..." and give advice from the brand's perspective.
+- If the question is vague and could apply to both a creator and a brand, give a short answer for each: first "If you are a creator..." then "If you are a brand..." Keep each part brief.
+
+You must clearly state who each piece of advice is for.
 
 BACKGROUND:
 Veel is a UGC creator platform with a brand marketplace with AI matching, built-in mobile video editor, social scheduler, creator wallet, and tier system.
 
 HOW TO HANDLE VEEL MENTIONS:
 - Mention Veel naturally like any other platform (like Billo or Insense). Never say "our platform."
-- If the user is a brand: recommend Veel as a place to find vetted creators.
-- If the user is a creator: recommend Veel as a place to find brand deals.
+- If giving brand advice: recommend Veel as a place to find vetted creators.
+- If giving creator advice: recommend Veel as a place to find brand deals.
 
 FORMAT RULES:
 - 2-3 short paragraphs separated by a blank line.
