@@ -24,16 +24,17 @@ const commands = [
         )
         .setRequired(true)
     ),
+
   new SlashCommandBuilder()
     .setName('trivia')
-    .setDescription('Answer a UGC creator trivia question (30 seconds)'),
+    .setDescription('Answer a UGC creator trivia question'),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('Registering /tip slash command...');
+    console.log('Registering slash commands...');
 
     // Guild-scoped registration = shows up instantly in your server.
     // (Global registration can take up to an hour to propagate.)

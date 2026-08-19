@@ -1,2 +1,8 @@
 node_modules
 .env
+
+# SAM build output
+.aws-sam/
+
+# `sam deploy --guided` writes your parameter values here, secrets included.
+samconfig.toml
