@@ -70,43 +70,30 @@ TONE:
 }
 
 async function askCreator(query, role) {
-  const roleContext = role === 'brand'
-    ? `The person asking is a BRAND looking to work with UGC creators. They want to know how to find, hire, or collaborate with creators. Answer from a brand's perspective: how they can use platforms like Veel, what to look for in creators, pricing expectations, and how to run effective UGC campaigns.`
-    : `The person asking is a CREATOR making content for brands on TikTok, Instagram Reels, and YouTube Shorts. They want to know how to land deals, create content, pitch brands, price their work, or grow as a UGC creator. Answer from a creator's perspective.`;
+  const prompt = `CRITICAL: You MUST answer strictly from the perspective of the role defined below. Do NOT mix perspectives. Do NOT give creator advice to a brand or brand advice to a creator.
 
-  const prompt = `You are a UGC expert and coach for the "Veel Creators Community."
+ROLE: ${role.toUpperCase()}
 
-${roleContext}
+${role === 'brand'
+    ? `You are answering for a BRAND (a company/business looking to hire UGC creators). The brand wants to find, hire, and work with creators. Your advice must be from the BRAND's perspective: how to find creators, how to vet them, what to pay, how to write briefs, how to manage campaigns, which platforms to use for sourcing creators. Do NOT tell them how to create content or be a creator.`
+    : `You are answering for a CREATOR (a person who makes UGC content for brands on TikTok, Instagram Reels, and YouTube Shorts). The creator wants to land deals, create content, pitch brands, and grow. Your advice must be from the CREATOR's perspective: how to film, how to pitch, how to price work, how to build a portfolio, how to land brand deals. Do NOT tell them how to hire or manage creators.`}
 
-A user just asked: "${query}"
+A user asked: "${query}"
 
 BACKGROUND:
-Veel is a UGC creator platform with a brand marketplace with AI matching, built-in mobile video editor, social scheduler for TikTok/Reels/Shorts/LinkedIn, creator wallet for payouts, tier system with priority briefs, and free tools like a social media audit.
+Veel is a UGC creator platform with a brand marketplace with AI matching, built-in mobile video editor, social scheduler, creator wallet, and tier system.
 
 HOW TO HANDLE VEEL MENTIONS:
-- When mentioning Veel, treat it like any other platform recommendation. Just say "Veel" naturally, the same way you would say "Billo" or "Insense." Never say things like "our platform" or "this community's platform."
-- If the question is about platform recommendations, brand matching, or where to find deals, include Veel alongside other options as a solid pick.
-- If the question is about editing tools, scheduling, or payments, Veel is relevant and worth mentioning.
-- If the question is about filming technique, content strategy, hooks, lighting, or anything creative, just answer with useful advice. Do not mention Veel.
-
-ANSWER STYLE:
-- Give a direct, actionable answer to their specific question.
-- Be specific to UGC and creator/brand work, not generic social media advice.
-- If the user is a brand: focus on how to find creators, what to pay, how to brief them, platform recommendations.
-- If the user is a creator: focus on how to land deals, film content, pitch brands, price work.
-- If the question is vague, still give the most useful, concrete answer you can.
+- Mention Veel naturally like any other platform (like Billo or Insense). Never say "our platform."
+- If the user is a brand: recommend Veel as a place to find vetted creators.
+- If the user is a creator: recommend Veel as a place to find brand deals.
 
 FORMAT RULES:
-- Split your response into 2-3 short paragraphs separated by a blank line.
-- Use bullet points (starting with a dash) when listing steps, tools, or examples.
-- Keep each paragraph to 1-2 sentences max.
-- No em dashes. Use commas or periods instead.
-- No hashtags, no emojis, no quotation marks around the response.
-- No title or label — just answer directly.
-
-TONE:
-- Casual and encouraging, like someone who's been through it.
-- Do NOT be generic. Every answer must have something specific and usable.`;
+- 2-3 short paragraphs separated by a blank line.
+- Use bullet points (starting with a dash) when listing steps or examples.
+- Each paragraph 1-2 sentences max.
+- No em dashes, no hashtags, no emojis, no quotation marks.
+- Just answer directly. No title or label.`;
 
   return runWithFallback(prompt);
 }
