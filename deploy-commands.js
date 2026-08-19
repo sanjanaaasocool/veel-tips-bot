@@ -13,28 +13,17 @@ const commands = [
         .setName('query')
         .setDescription('Your question about content creation, UGC, filming, editing, brands, etc.')
         .setRequired(true)
-    )
-    .addStringOption((option) =>
-      option
-        .setName('role')
-        .setDescription('Are you a creator or a brand?')
-        .addChoices(
-          { name: 'Creator', value: 'creator' },
-          { name: 'Brand', value: 'brand' }
-        )
-        .setRequired(true)
     ),
-
   new SlashCommandBuilder()
     .setName('trivia')
-    .setDescription('Answer a UGC creator trivia question'),
+    .setDescription('Answer a UGC creator trivia question (30 seconds)'),
 ].map((command) => command.toJSON());
 
 const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
 
 (async () => {
   try {
-    console.log('Registering slash commands...');
+    console.log('Registering /tip slash command...');
 
     // Guild-scoped registration = shows up instantly in your server.
     // (Global registration can take up to an hour to propagate.)
@@ -48,3 +37,4 @@ const rest = new REST({ version: '10' }).setToken(process.env.DISCORD_TOKEN);
     console.error('Failed to register command:', error);
   }
 })();
+
