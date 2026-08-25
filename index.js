@@ -11,7 +11,7 @@ const client = new Client({
 const TRIVIA_TIMEOUT_MS = 45 * 1000;
 const activeTrivia = new Map(); // triviaId -> { question, correctLetter, channelId, answeredUsers }
 
-const COOLDOWN_MS = 60 * 1000;
+const COOLDOWN_MS = 30 * 1000;
 const lastUsed = new Map();
 
 const API_HICCUP_MESSAGES = [
@@ -172,7 +172,7 @@ async function handleCommand(interaction) {
         .setColor(0xe74c3c)
         .setTitle('🎯 Veel Trivia')
         .setDescription(
-          `**${question.text}**\n\nPick an answer below. You've got **1 minute**!`
+          `**${question.text}**\n\nPick an answer below. You've got **45 seconds**!`
         );
 
       const row = new ActionRowBuilder().addComponents(
