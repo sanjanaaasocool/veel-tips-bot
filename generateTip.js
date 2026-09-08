@@ -96,3 +96,4 @@ FORMAT RULES:
 }
 
 module.exports = { generateTip, askCreator };
+
