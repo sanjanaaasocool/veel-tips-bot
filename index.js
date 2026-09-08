@@ -68,7 +68,16 @@ function buildAskEmbed(query, answer) {
 client.once('ready', () => {
   console.log(`Logged in as ${client.user.tag}`);
 
-
+  cron.schedule('45 21 * * *', async () => {
+    try {
+      const channel = await client.channels.fetch(process.env.CREATOR_TIPS_CHANNEL_ID);
+      if (!channel) return;
+      const tipText = await generateTip();
+      await channel.send({ embeds: [buildTipEmbed(tipText)] });
+    } catch (err) {
+      console.error('Failed to send daily tip:', err);
+    }
+  }, { timezone: 'Asia/Kathmandu' });
 });
 
 client.on('interactionCreate', async (interaction) => {
@@ -291,3 +300,4 @@ client.login(process.env.DISCORD_TOKEN).catch((err) => {
   console.error('Failed to login:', err);
   console.error(getDownMessage());
 });
+
