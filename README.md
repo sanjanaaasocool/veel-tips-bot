@@ -26,7 +26,7 @@ Discord  ──POST──>  API Gateway  ──>  InteractionFunction
                                                           │  calls Gemini
                                                           └──>  edits the reply
 
-EventBridge Scheduler  ──daily 21:45──>  WeeklyFunction  ──>  posts to channel
+EventBridge Scheduler  ──daily 21:45──>  ScheduledTipFunction  ──>  posts to channel
 ```
 
 The split exists because Discord drops any interaction not answered within **3 seconds**, and
@@ -40,7 +40,7 @@ run in the wrong channel is refused instantly and never costs a Gemini call.
 |---|---|
 | [src/interaction.js](src/interaction.js) | Signature check, channel rules, fast ack, hand-off |
 | [src/worker.js](src/worker.js) | Gemini call, edits the deferred reply |
-| [src/weekly.js](src/weekly.js) | Scheduled daily post |
+| [src/scheduledTip.js](src/scheduledTip.js) | Scheduled daily post |
 | [src/lib/discord.js](src/lib/discord.js) | Signature verification, embeds, REST calls |
 | [src/lib/messages.js](src/lib/messages.js) | Friendly failure messages |
 | [src/trivia.js](src/trivia.js) | Trivia question bank |
@@ -121,7 +121,7 @@ in any other channel and it should refuse immediately.
 Test the scheduled post without waiting for 21:45:
 
 ```
-aws lambda invoke --function-name veel-tips-bot-weekly /dev/stdout --profile <your-aws-profile>
+aws lambda invoke --function-name veel-tips-bot-scheduled-tip /dev/stdout --profile <your-aws-profile>
 ```
 
 ---

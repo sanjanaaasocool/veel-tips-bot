@@ -6,7 +6,7 @@ Parameters:
   DiscordToken:
     Type: String
     NoEcho: true
-    Description: Bot token, used only by the weekly post to write to the channel.
+    Description: Bot token, used only by the scheduled post to write to the channel.
   DiscordPublicKey:
     Type: String
     Description: Developer Portal > General Information > Public Key. Verifies inbound requests.
@@ -15,7 +15,7 @@ Parameters:
     Description: Developer Portal > General Information > Application ID.
   TipsChannelId:
     Type: String
-    Description: Channel the weekly tip is posted to.
+    Description: Channel the scheduled tip is posted to.
   CreatorTipsChannelId:
     Type: String
     Description: Channel where /tip and /ask are allowed. Requests from elsewhere are refused.
@@ -103,15 +103,15 @@ Resources:
           DISCORD_APPLICATION_ID: !Ref DiscordApplicationId
           GEMINI_API_KEY: !Ref GeminiApiKey
 
-  # Replaces the node-cron schedule from the old always-on process. The cadence
-  # moved from weekly to daily; the logical ID and function name are kept as
-  # "weekly" so an update does not have to tear down and recreate the function.
-  WeeklyFunction:
+  # Replaces the node-cron schedule from the old always-on process. Named for
+  # the job rather than the cadence, so changing TipSchedule does not leave the
+  # resource lying about how often it runs.
+  ScheduledTipFunction:
     Type: AWS::Serverless::Function
-    DependsOn: WeeklyLogGroup
+    DependsOn: ScheduledTipLogGroup
     Properties:
-      FunctionName: veel-tips-bot-weekly
-      Handler: weekly.handler
+      FunctionName: veel-tips-bot-scheduled-tip
+      Handler: scheduledTip.handler
       Environment:
         Variables:
           DISCORD_TOKEN: !Ref DiscordToken
@@ -143,12 +143,12 @@ Resources:
       LogGroupName: /aws/lambda/veel-tips-bot-worker
       RetentionInDays: 14
 
-  WeeklyLogGroup:
+  ScheduledTipLogGroup:
     Type: AWS::Logs::LogGroup
     DeletionPolicy: Delete
     UpdateReplacePolicy: Delete
     Properties:
-      LogGroupName: /aws/lambda/veel-tips-bot-weekly
+      LogGroupName: /aws/lambda/veel-tips-bot-scheduled-tip
       RetentionInDays: 14
 
 Outputs:
