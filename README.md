@@ -3,9 +3,9 @@
 A Discord bot that generates UGC creator tips using Gemini's free API.
 
 - `/tip` — an on-demand creator tip (only in the creator-tips channel)
-- `/ask <query> <role>` — a tailored answer, tuned for a creator or a brand
+- `/ask <query>` — an answer grounded in [src/veelKnowledge.js](src/veelKnowledge.js)
 - `/trivia` — a multiple-choice creator trivia round with buttons (quick-games channel)
-- Posts a fresh tip every **Monday at 10:00 AM** (Asia/Kathmandu) to your tips channel
+- Posts a fresh tip every day at **9:45 PM** (Asia/Kathmandu) to your tips channel
 
 It runs on AWS Lambda with no always-on server, which keeps it inside the perpetual free tier.
 
@@ -26,7 +26,7 @@ Discord  ──POST──>  API Gateway  ──>  InteractionFunction
                                                           │  calls Gemini
                                                           └──>  edits the reply
 
-EventBridge Scheduler  ──Mondays 10:00──>  WeeklyFunction  ──>  posts to channel
+EventBridge Scheduler  ──daily 21:45──>  WeeklyFunction  ──>  posts to channel
 ```
 
 The split exists because Discord drops any interaction not answered within **3 seconds**, and
@@ -40,12 +40,19 @@ run in the wrong channel is refused instantly and never costs a Gemini call.
 |---|---|
 | [src/interaction.js](src/interaction.js) | Signature check, channel rules, fast ack, hand-off |
 | [src/worker.js](src/worker.js) | Gemini call, edits the deferred reply |
-| [src/weekly.js](src/weekly.js) | Scheduled Monday post |
+| [src/weekly.js](src/weekly.js) | Scheduled daily post |
 | [src/lib/discord.js](src/lib/discord.js) | Signature verification, embeds, REST calls |
 | [src/lib/messages.js](src/lib/messages.js) | Friendly failure messages |
 | [src/trivia.js](src/trivia.js) | Trivia question bank |
 | [src/generateTip.js](src/generateTip.js) | Prompts and Gemini wiring |
 | [template.yaml](template.yaml) | All AWS infrastructure |
+
+> **Edit code under `src/` only.** `template.yaml` sets `CodeUri: src/`, so `src/` is the only
+> directory packaged into the Lambda bundle. The repo used to carry a second copy of the bot at
+> the root (`index.js`, `generateTip.js`, `veelKnowledge.js`) for the retired always-on process.
+> Those files are gone. Anything added at the repo root will run locally and silently never
+> reach production, which is how a whole knowledge base and a daily-tip schedule ended up
+> shipped only on someone's laptop.
 
 ---
 
@@ -62,7 +69,7 @@ run in the wrong channel is refused instantly and never costs a Gemini call.
 | Bot token | Developer Portal → your app → **Bot** → Reset Token |
 | Public key | Developer Portal → your app → **General Information** → Public Key |
 | Application ID | Developer Portal → your app → **General Information** → Application ID |
-| Tips channel ID | Right-click the channel the Monday post goes to → **Copy Channel ID** |
+| Tips channel ID | Right-click the channel the daily post goes to → **Copy Channel ID** |
 | Creator-tips channel ID | Right-click the channel where `/tip` and `/ask` are allowed → **Copy Channel ID** |
 | Quick-games channel ID | Right-click the channel where `/trivia` is allowed → **Copy Channel ID** |
 | Gemini API key | [Google AI Studio](https://aistudio.google.com) → Get API key |
@@ -111,7 +118,7 @@ Expect `Successfully registered /tip and /ask commands.`
 Run `/tip` in your creator-tips channel — "thinking..." for a few seconds, then the tip. Run it
 in any other channel and it should refuse immediately.
 
-Test the weekly post without waiting for Monday:
+Test the scheduled post without waiting for 21:45:
 
 ```
 aws lambda invoke --function-name veel-tips-bot-weekly /dev/stdout --profile <your-aws-profile>
@@ -131,7 +138,7 @@ expire after 14 days. Worth adding yourself: an **AWS Budget alert at $1**.
 
 ## Customizing
 
-- **Schedule / timezone:** `WeeklySchedule` and `ScheduleTimezone` in [template.yaml](template.yaml).
+- **Schedule / timezone:** `TipSchedule` and `ScheduleTimezone` in [template.yaml](template.yaml).
   EventBridge cron is `cron(min hour day-of-month month day-of-week year)`, so
   `cron(0 18 ? * SUN *)` is Sundays at 6 PM. Redeploy to apply.
 - **Which channels commands work in:** `CreatorTipsChannelId` parameter, consumed by
@@ -151,7 +158,7 @@ sam logs --stack-name <your-stack-name> --tail
 | "The application did not respond" | `InteractionFunction` erroring — check its logs |
 | Spinner never resolves | `WorkerFunction` failing, often a bad `GeminiApiKey` |
 | Command refused in the right channel | `CreatorTipsChannelId` does not match the real channel |
-| Weekly post never arrives | Wrong `TipsChannelId`, or the bot lacks Send Messages there |
+| Daily post never arrives | Wrong `TipsChannelId`, or the bot lacks Send Messages there |
 
 ## Known gaps
 
@@ -162,12 +169,7 @@ disabled. Everything else about the game is stateless: the correct answer is enc
 button's `custom_id`, and the labels are read back off the message Discord sends with the button
 press, so no database is involved.
 
-**Root [index.js](index.js) still cannot load.** It imports `./trivia`, and the question bank
-lives at [src/trivia.js](src/trivia.js) because only `src/` is packaged for Lambda. This does not
-affect the deployed bot.
-
-**`src/generateTip.js` is a copy of the root `generateTip.js`.** Only `src/` is packaged into the
-Lambda bundle. Edits to one do not reach the other. Consolidate once you decide whether
-[index.js](index.js) is being retired.
-
-**[index.js](index.js) is the old always-on entrypoint.** Nothing in the deployed bot uses it.
+**The always-on entrypoint has been retired.** `index.js` and the root `generateTip.js` were a
+second, diverging copy of the bot: only `src/` is packaged into the Lambda bundle, so prompt edits
+made at the root never reached production. Both files are gone and `src/` is now the only source of
+truth. Everything under `src/` is tracked in git so a deploy is reproducible from a clean checkout.

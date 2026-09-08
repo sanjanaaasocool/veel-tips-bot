@@ -1,4 +1,5 @@
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { VEEL_KNOWLEDGE_BASE, VEEL_QUICK_FACTS } = require('./veelKnowledge');
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
@@ -12,7 +13,7 @@ const TIP_ANGLES = [
   'a tip for pricing your UGC work as a beginner',
   'a tip for filming clean UGC videos with just a phone',
   'a tip for editing UGC content fast without fancy software',
-  'a tip for gettingUGC brand deals on Instagram',
+  'a tip for getting UGC brand deals on Instagram',
   'a tip for building a UGC portfolio that impresses brands',
   'a tip for repurposing one UGC video across TikTok, Reels, and Shorts',
   'a tip for creating authentic unboxing or review-style UGC',
@@ -51,8 +52,10 @@ async function generateTip() {
 
 Write ONE tip: ${angle}.
 
-BACKGROUND:
-Veel is a UGC creator platform with a brand marketplace, built-in video editor, social scheduler, creator wallet, and tier system. You can mention it naturally when it fits, but do not force it. If the tip is about filming technique or content strategy, just give the tip without mentioning any platform.
+BACKGROUND (the only Veel facts you may state; do not invent others):
+${VEEL_QUICK_FACTS}
+
+You can mention Veel naturally when it fits, but do not force it. If the tip is about filming technique or content strategy, just give the tip without mentioning any platform.
 
 FORMAT RULES:
 - Split your response into 2-3 short paragraphs separated by a blank line.
@@ -74,6 +77,18 @@ async function askCreator(query) {
 
 A user asked: "${query}"
 
+VEEL KNOWLEDGE BASE:
+The section below is the single source of truth about Veel. It is current and authoritative.
+<veel_knowledge_base>
+${VEEL_KNOWLEDGE_BASE}
+</veel_knowledge_base>
+
+GROUNDING RULES (these override everything else):
+- For ANY factual claim about Veel (creator counts, brand counts, pricing, tiers, features, payouts, countries, founder, company details), use ONLY the knowledge base above. Quote its figures exactly.
+- Never estimate, round, soften, or substitute a figure from your own training data. If the knowledge base says 550K+ verified creators, say 550K+ verified creators, not "thousands" or "a growing network."
+- Follow any explicit "Bot rule:" lines in the knowledge base.
+- If the knowledge base does not cover something about Veel, say you are not sure based on the information you have and point them to current Veel information or support. Do not fill the gap with a plausible guess.
+
 HOW TO ANSWER:
 - First and foremost, answer the actual question. Prioritize being accurate and genuinely helpful over anything else.
 - If the question is about UGC content creation, filming, pitching brands, pricing work, growing as a creator, running campaigns, briefs, vetting creators, or sourcing UGC, then bring in your creator/brand expertise and give real, specific, useful advice from the relevant side (creator or brand). Only split your answer into "creator" and "brand" perspectives if the question is genuinely ambiguous between the two, don't force this structure otherwise.
@@ -82,7 +97,7 @@ HOW TO ANSWER:
 HOW TO HANDLE VEEL MENTIONS:
 - Only mention Veel if the user directly asks about it/its features, or if recommending a platform is genuinely and naturally the most useful answer to what they asked (e.g. "where can I find brand deals" or "where can brands find creators").
 - Never force Veel into unrelated answers. Most answers should not mention Veel at all.
-- If you do mention Veel, be accurate: it's a UGC creator platform with a brand marketplace (AI-assisted matching), a built-in mobile video editor, a social scheduler, a creator wallet. Don't invent features. Never say "our platform," refer to it like you would any other named platform.
+- Never say "our platform," refer to it like you would any other named platform.
 
 FORMAT RULES:
 - Write like a normal, articulate person answering a question, not a marketing template. Default to plain paragraphs.

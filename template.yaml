@@ -1,0 +1,157 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Veel Tips Bot - Discord HTTP-interactions bot on Lambda
+
+Parameters:
+  DiscordToken:
+    Type: String
+    NoEcho: true
+    Description: Bot token, used only by the weekly post to write to the channel.
+  DiscordPublicKey:
+    Type: String
+    Description: Developer Portal > General Information > Public Key. Verifies inbound requests.
+  DiscordApplicationId:
+    Type: String
+    Description: Developer Portal > General Information > Application ID.
+  TipsChannelId:
+    Type: String
+    Description: Channel the weekly tip is posted to.
+  CreatorTipsChannelId:
+    Type: String
+    Description: Channel where /tip and /ask are allowed. Requests from elsewhere are refused.
+  QuickGamesChannelId:
+    Type: String
+    Description: Channel where quick games are allowed.
+  GeminiApiKey:
+    Type: String
+    NoEcho: true
+    Description: Google AI Studio API key.
+  TipSchedule:
+    Type: String
+    # Quoted because an unquoted "?" is ambiguous to some YAML parsers.
+    Default: 'cron(45 21 * * ? *)'
+    Description: EventBridge Scheduler cron for the scheduled tip. Default is daily at 21:45.
+  ScheduleTimezone:
+    Type: String
+    Default: Asia/Kathmandu
+    Description: IANA timezone the schedule is evaluated in. Handles DST on its own.
+
+Globals:
+  Function:
+    Runtime: nodejs24.x
+    # Graviton runs about 20% cheaper and every dependency here is pure JS.
+    Architectures:
+      - arm64
+    CodeUri: src/
+    MemorySize: 256
+    Timeout: 60
+
+Resources:
+  BotApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      StageName: "$default"
+      # The endpoint is public by necessity, so cap how fast anyone can hammer it.
+      # This is also what bounds Lambda concurrency, since all traffic enters here.
+      DefaultRouteSettings:
+        ThrottlingRateLimit: 10
+        ThrottlingBurstLimit: 20
+
+  # Fronts Discord. Verifies the signature and acknowledges within the 3s deadline.
+  InteractionFunction:
+    Type: AWS::Serverless::Function
+    # Without this, Lambda may auto-create the log group on first invoke and the
+    # LogGroup resource below then fails with AlreadyExists.
+    DependsOn: InteractionLogGroup
+    Properties:
+      FunctionName: veel-tips-bot-interaction
+      Handler: interaction.handler
+      # Extra memory buys proportionally more CPU, which shortens cold starts.
+      # This is the one function where latency is a hard requirement.
+      MemorySize: 512
+      Timeout: 10
+      Environment:
+        Variables:
+          DISCORD_PUBLIC_KEY: !Ref DiscordPublicKey
+          CREATOR_TIPS_CHANNEL_ID: !Ref CreatorTipsChannelId
+          QUICK_GAMES_CHANNEL_ID: !Ref QuickGamesChannelId
+          WORKER_FUNCTION_NAME: !Ref WorkerFunction
+      Policies:
+        - LambdaInvokePolicy:
+            FunctionName: !Ref WorkerFunction
+      Events:
+        Interactions:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref BotApi
+            Path: /interactions
+            Method: POST
+
+  # Does the slow Gemini call, then patches the result into the deferred reply.
+  WorkerFunction:
+    Type: AWS::Serverless::Function
+    DependsOn: WorkerLogGroup
+    Properties:
+      FunctionName: veel-tips-bot-worker
+      Handler: worker.handler
+      EventInvokeConfig:
+        # A retry would mean a second Gemini call and a second overwrite of the
+        # same reply. Failing once and reporting it is the better outcome.
+        MaximumRetryAttempts: 0
+      Environment:
+        Variables:
+          DISCORD_APPLICATION_ID: !Ref DiscordApplicationId
+          GEMINI_API_KEY: !Ref GeminiApiKey
+
+  # Replaces the node-cron schedule from the old always-on process. The cadence
+  # moved from weekly to daily; the logical ID and function name are kept as
+  # "weekly" so an update does not have to tear down and recreate the function.
+  WeeklyFunction:
+    Type: AWS::Serverless::Function
+    DependsOn: WeeklyLogGroup
+    Properties:
+      FunctionName: veel-tips-bot-weekly
+      Handler: weekly.handler
+      Environment:
+        Variables:
+          DISCORD_TOKEN: !Ref DiscordToken
+          TIPS_CHANNEL_ID: !Ref TipsChannelId
+          GEMINI_API_KEY: !Ref GeminiApiKey
+      Events:
+        ScheduledTip:
+          Type: ScheduleV2
+          Properties:
+            ScheduleExpression: !Ref TipSchedule
+            ScheduleExpressionTimezone: !Ref ScheduleTimezone
+
+  # Declared explicitly so logs expire instead of accruing storage cost forever.
+  # These hold nothing worth keeping past the stack, so Delete is deliberate:
+  # stating it silences the "stateful resource" lint and documents the intent.
+  InteractionLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/veel-tips-bot-interaction
+      RetentionInDays: 14
+
+  WorkerLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/veel-tips-bot-worker
+      RetentionInDays: 14
+
+  WeeklyLogGroup:
+    Type: AWS::Logs::LogGroup
+    DeletionPolicy: Delete
+    UpdateReplacePolicy: Delete
+    Properties:
+      LogGroupName: /aws/lambda/veel-tips-bot-weekly
+      RetentionInDays: 14
+
+Outputs:
+  InteractionsEndpointUrl:
+    Description: Paste into Developer Portal > General Information > Interactions Endpoint URL
+    Value: !Sub https://${BotApi}.execute-api.${AWS::Region}.amazonaws.com/interactions

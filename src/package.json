@@ -1,0 +1,11 @@
+{
+  "name": "veel-tips-bot-functions",
+  "version": "1.0.0",
+  "description": "Lambda handlers for the Veel Tips Discord bot.",
+  "private": true,
+  "type": "commonjs",
+  "dependencies": {
+    "@aws-sdk/client-lambda": "^3.699.0",
+    "@google/generative-ai": "^0.21.0"
+  }
+}
