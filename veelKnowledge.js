@@ -1,8 +1,3 @@
-// Veel knowledge base for the bot.
-// VEEL_KNOWLEDGE_BASE is injected into /ask prompts (full detail).
-// VEEL_QUICK_FACTS is a short accurate summary used by /tip background context.
-// Update this file when Veel's public information changes.
-
 const VEEL_KNOWLEDGE_BASE = `
 VEEL — STRUCTURED BOT KNOWLEDGE BASE
 
